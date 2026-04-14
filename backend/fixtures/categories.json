@@ -1,0 +1,7 @@
+[
+  {"model": "items.category", "pk": 1, "fields": {"name": "Electronics", "icon": "\u26a1"}},
+  {"model": "items.category", "pk": 2, "fields": {"name": "Documents", "icon": "\ud83d\udcc4"}},
+  {"model": "items.category", "pk": 3, "fields": {"name": "Keys", "icon": "\ud83d\udd11"}},
+  {"model": "items.category", "pk": 4, "fields": {"name": "Accessories", "icon": "\ud83d\udc5c"}},
+  {"model": "items.category", "pk": 5, "fields": {"name": "Other", "icon": "\ud83d\udce6"}}
+]
