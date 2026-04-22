@@ -19,7 +19,7 @@ import { Item } from '../../interfaces/item.interface';
 
         <div class="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           @if (item.image) {
-            <img [src]="item.image" [alt]="item.title" class="w-full h-64 object-cover rounded-md mb-4" />
+            <img [src]="item.image" [alt]="item.title" (error)="$any($event.target).style.display='none'" class="w-full h-64 object-cover rounded-md mb-4" />
           }
 
           <div class="flex items-center gap-2 mb-3">

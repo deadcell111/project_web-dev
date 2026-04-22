@@ -16,11 +16,20 @@ import { Item } from '../../interfaces/item.interface';
     </div>
 
     @if (loading) {
-      <div class="text-center py-10 text-gray-500">Loading...</div>
+      <div class="space-y-4 mt-6">
+        @for (_ of [1,2,3]; track $index) {
+          <div class="rounded-lg bg-white border border-gray-200 p-4 animate-pulse">
+            <div class="h-4 bg-gray-100 rounded w-1/3 mb-2"></div>
+            <div class="h-3 bg-gray-100 rounded w-1/2"></div>
+          </div>
+        }
+      </div>
     } @else if (items.length === 0) {
-      <div class="text-center py-10">
-        <p class="text-gray-500 mb-4">You haven't posted any items yet.</p>
-        <a routerLink="/post" class="text-blue-600 hover:underline">Post your first item</a>
+      <div class="mt-12 text-center py-16 px-4 bg-white border border-dashed border-gray-300 rounded-lg">
+        <div class="text-5xl mb-3">📦</div>
+        <h3 class="text-lg font-medium text-gray-900">No items yet</h3>
+        <p class="text-sm text-gray-500 mt-1 mb-4">You haven't posted any items yet.</p>
+        <a routerLink="/post" class="inline-block px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-800">Post your first item</a>
       </div>
     } @else {
       <div class="space-y-4">

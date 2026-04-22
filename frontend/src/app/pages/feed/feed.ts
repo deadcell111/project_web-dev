@@ -67,9 +67,23 @@ import { Category } from '../../interfaces/category.interface';
 
     <!-- Items grid -->
     @if (loading) {
-      <div class="text-center py-10 text-gray-500">Loading...</div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-6">
+        @for (_ of [1,2,3,4,5,6]; track $index) {
+          <div class="rounded-lg bg-white border border-gray-200 overflow-hidden animate-pulse">
+            <div class="h-40 bg-gray-100"></div>
+            <div class="p-4 space-y-2">
+              <div class="h-4 bg-gray-100 rounded w-3/4"></div>
+              <div class="h-3 bg-gray-100 rounded w-1/2"></div>
+            </div>
+          </div>
+        }
+      </div>
     } @else if (items.length === 0) {
-      <div class="text-center py-10 text-gray-500">No items found.</div>
+      <div class="mt-12 text-center py-16 px-4 bg-white border border-dashed border-gray-300 rounded-lg">
+        <div class="text-5xl mb-3">🔎</div>
+        <h3 class="text-lg font-medium text-gray-900">Nothing here yet</h3>
+        <p class="text-sm text-gray-500 mt-1">Try a different filter or be the first to post.</p>
+      </div>
     } @else {
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         @for (item of items; track item.id) {
