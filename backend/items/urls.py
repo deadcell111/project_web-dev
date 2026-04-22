@@ -1,7 +1,8 @@
 from django.urls import path
 
 from items.views import (
-    CategoryListView,
+    CategoryDetailView,
+    CategoryListCreateView,
     ClaimListView,
     ItemListCreateView,
     MyClaimsView,
@@ -22,6 +23,7 @@ urlpatterns = [
     path('claims/my/', MyClaimsView.as_view(), name='my-claims'),
     path('claims/<int:pk>/withdraw/', withdraw_claim_view, name='claim-withdraw'),
     path('claims/<int:pk>/<str:action>/', approve_reject_view, name='approve-reject'),
-    path('categories/', CategoryListView.as_view(), name='category-list'),
+    path('categories/', CategoryListCreateView.as_view(), name='category-list-create'),
+    path('categories/<int:pk>/', CategoryDetailView.as_view(), name='category-detail'),
     path('stats/', stats_view, name='stats'),
 ]
