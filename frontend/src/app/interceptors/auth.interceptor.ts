@@ -18,6 +18,13 @@ export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
   const http = inject(HttpClient);
   const auth = inject(AuthService);
 
+  // Bypass interceptor entirely for direct-to-MinIO uploads
+  if (req.url.startsWith('http://localhost:29000') ||
+      req.url.includes('.amazonaws.com') ||
+      req.url.includes('/minio/')) {
+    return next(req);
+  }
+
   let cloned = req.clone({ withCredentials: true });
 
   const csrfToken = getCookie('csrftoken');
