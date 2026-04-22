@@ -1,3 +1,4 @@
+from django.db import IntegrityError
 from django.db.models import Count, Q
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -7,6 +8,8 @@ from rest_framework.views import APIView
 
 from items.models import Category, Claim, Item
 from items.serializers import CategorySerializer, ClaimSerializer, ItemSerializer
+from notifications.models import Notification
+from notifications.services import notify
 
 
 class ItemListCreateView(APIView):
@@ -103,16 +106,34 @@ def create_claim_view(request, pk):
             {'detail': 'Cannot claim your own item.'},
             status=status.HTTP_400_BAD_REQUEST,
         )
+    if item.status == Item.Status.RESOLVED:
+        return Response(
+            {'detail': 'Item is already resolved.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     serializer = ClaimSerializer(data=request.data, context={'request': request})
     serializer.is_valid(raise_exception=True)
-    serializer.save(item=item, user=request.user)
+    try:
+        claim = serializer.save(item=item, user=request.user)
+    except IntegrityError:
+        return Response(
+            {'detail': 'You already have a pending claim on this item.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
-    if item.status == Item.Status.OPEN:
-        item.status = Item.Status.CLAIMED
-        item.save(update_fields=['status'])
+    notify(
+        recipient=item.user,
+        actor=request.user,
+        kind=Notification.Kind.CLAIM_CREATED,
+        item=item,
+        claim=claim,
+    )
 
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(
+        ClaimSerializer(claim, context={'request': request}).data,
+        status=status.HTTP_201_CREATED,
+    )
 
 
 class ClaimListView(APIView):
