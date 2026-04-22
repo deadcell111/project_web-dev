@@ -5,6 +5,8 @@ export interface Claim {
   username: string;
   message: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  user_telegram: string | null;
+  owner_telegram: string | null;
   created_at: string;
 }
 

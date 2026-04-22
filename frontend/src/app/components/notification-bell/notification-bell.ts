@@ -14,7 +14,7 @@ import { NotificationService } from '../../services/notification.service';
           <path d="M18 16v-5a6 6 0 10-12 0v5l-2 2h16l-2-2z" stroke-linecap="round" stroke-linejoin="round"/>
           <path d="M10 20a2 2 0 004 0" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        @if ((notifications.unreadCount$ | async) as n) {
+        @if ((notifications.unreadCount$ | async); as n) {
           @if (n > 0) {
             <span class="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-semibold flex items-center justify-center">
               {{ n > 99 ? '99+' : n }}
