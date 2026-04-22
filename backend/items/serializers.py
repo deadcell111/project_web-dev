@@ -13,16 +13,17 @@ class CategorySerializer(serializers.ModelSerializer):
 class ClaimSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
     user_telegram = serializers.SerializerMethodField()
+    owner_telegram = serializers.SerializerMethodField()
 
     class Meta:
         model = Claim
         fields = [
             'id', 'item', 'user', 'username', 'message', 'status',
-            'user_telegram', 'created_at',
+            'user_telegram', 'owner_telegram', 'created_at',
         ]
         read_only_fields = [
             'id', 'item', 'user', 'username', 'status',
-            'user_telegram', 'created_at',
+            'user_telegram', 'owner_telegram', 'created_at',
         ]
 
     def get_user_telegram(self, obj: Claim):
@@ -34,6 +35,16 @@ class ClaimSerializer(serializers.ModelSerializer):
         if request.user != obj.item.user and request.user != obj.user:
             return None
         return getattr(obj.user.profile, 'telegram', '') or None
+
+    def get_owner_telegram(self, obj: Claim):
+        request = self.context.get('request')
+        if request is None or not request.user.is_authenticated:
+            return None
+        if obj.status != 'APPROVED':
+            return None
+        if request.user != obj.item.user and request.user != obj.user:
+            return None
+        return getattr(obj.item.user.profile, 'telegram', '') or None
 
 
 class ItemSerializer(serializers.ModelSerializer):

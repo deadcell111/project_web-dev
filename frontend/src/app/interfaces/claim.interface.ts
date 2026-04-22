@@ -16,6 +16,7 @@ export interface MyClaim {
   message: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   user_telegram: string | null;
+  owner_telegram: string | null;
   created_at: string;
   item_snapshot: {
     id: number;
