@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     # Local
     'accounts',
     'items',
+    'notifications',
 ]
 
 MIDDLEWARE = [
