@@ -6,6 +6,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from common.storage import presign_get
 from items.models import Category, Claim, Item
 from items.serializers import CategorySerializer, ClaimSerializer, ItemSerializer
 from notifications.models import Notification
@@ -280,3 +281,26 @@ def withdraw_claim_view(request, pk):
     )
 
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class MyClaimsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        claims = Claim.objects.filter(
+            user=request.user
+        ).select_related('item', 'item__category', 'item__user')
+        data = ClaimSerializer(claims, many=True, context={'request': request}).data
+
+        # Enrich with minimal item snapshot for the UI
+        items_by_id = {c.item_id: c.item for c in claims}
+        for row in data:
+            item = items_by_id[row['item']]
+            row['item_snapshot'] = {
+                'id': item.id,
+                'title': item.title,
+                'item_type': item.item_type,
+                'status': item.status,
+                'image': presign_get(item.image),
+            }
+        return Response(data)
