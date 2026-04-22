@@ -349,3 +349,57 @@ class MyClaimsView(APIView):
                 'image': presign_get(item.image),
             }
         return Response(data)
+
+
+class AdminItemListView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        qs = Item.objects.select_related('user', 'category').prefetch_related(
+            'claims__user'
+        )
+        if (t := request.query_params.get('type')):
+            qs = qs.filter(item_type=t)
+        if (s := request.query_params.get('status')):
+            qs = qs.filter(status=s)
+        if (u := request.query_params.get('user_id')):
+            qs = qs.filter(user_id=u)
+
+        from rest_framework.pagination import PageNumberPagination
+        paginator = PageNumberPagination()
+        paginator.page_size = 20
+        page = paginator.paginate_queryset(qs, request)
+        serializer = ItemSerializer(page, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def force_resolve_view(request, pk):
+    try:
+        item = Item.objects.get(pk=pk)
+    except Item.DoesNotExist:
+        return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+    if item.status == Item.Status.RESOLVED:
+        return Response(
+            {'detail': 'Already resolved.'}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    with transaction.atomic():
+        item.status = Item.Status.RESOLVED
+        item.save(update_fields=['status'])
+        pending = Claim.objects.filter(
+            item=item, status=Claim.Status.PENDING
+        ).select_related('user')
+        for c in pending:
+            c.status = Claim.Status.REJECTED
+            c.save(update_fields=['status'])
+            notify(
+                recipient=c.user,
+                actor=request.user,
+                kind=Notification.Kind.CLAIM_REJECTED,
+                item=item,
+                claim=c,
+            )
+
+    return Response(ItemSerializer(item, context={'request': request}).data)

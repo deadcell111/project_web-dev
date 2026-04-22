@@ -1,6 +1,7 @@
 from django.urls import path
 
 from items.views import (
+    AdminItemListView,
     CategoryDetailView,
     CategoryListCreateView,
     ClaimListView,
@@ -9,6 +10,7 @@ from items.views import (
     MyItemsView,
     approve_reject_view,
     create_claim_view,
+    force_resolve_view,
     item_detail_view,
     stats_view,
     withdraw_claim_view,
@@ -26,4 +28,6 @@ urlpatterns = [
     path('categories/', CategoryListCreateView.as_view(), name='category-list-create'),
     path('categories/<int:pk>/', CategoryDetailView.as_view(), name='category-detail'),
     path('stats/', stats_view, name='stats'),
+    path('admin/items/', AdminItemListView.as_view(), name='admin-item-list'),
+    path('items/<int:pk>/force-resolve/', force_resolve_view, name='force-resolve'),
 ]
