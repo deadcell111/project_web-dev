@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from accounts.serializers import LoginSerializer, ProfileSerializer, RegisterSerializer
+from common.storage import presign_get
 
 
 def _set_auth_cookies(response, user):
@@ -40,9 +41,11 @@ def _user_data(user):
         'email': user.email,
         'first_name': user.first_name,
         'last_name': user.last_name,
+        'is_staff': user.is_staff,
         'telegram': getattr(user.profile, 'telegram', ''),
         'phone': getattr(user.profile, 'phone', ''),
-        'avatar': getattr(user.profile, 'avatar', ''),
+        'avatar_key': getattr(user.profile, 'avatar', '') or None,
+        'avatar': presign_get(getattr(user.profile, 'avatar', None)),
     }
 
 

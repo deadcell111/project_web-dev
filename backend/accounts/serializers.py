@@ -1,8 +1,26 @@
+import re
+
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
 from accounts.models import Profile
+
+
+TELEGRAM_RE = re.compile(r'^[a-zA-Z0-9_]{5,32}$')
+
+
+def normalize_telegram(raw: str) -> str:
+    if raw is None:
+        return ''
+    t = raw.strip()
+    if t.startswith('https://t.me/'):
+        t = t[len('https://t.me/'):]
+    elif t.startswith('t.me/'):
+        t = t[len('t.me/'):]
+    if t.startswith('@'):
+        t = t[1:]
+    return t
 
 
 class RegisterSerializer(serializers.Serializer):
@@ -33,7 +51,7 @@ class RegisterSerializer(serializers.Serializer):
             last_name=validated_data.get('last_name', ''),
         )
         if telegram:
-            user.profile.telegram = telegram
+            user.profile.telegram = normalize_telegram(telegram)
             user.profile.save()
         return user
 
@@ -54,3 +72,13 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = ['telegram', 'phone', 'avatar']
+
+    def validate_telegram(self, value):
+        if value in (None, ''):
+            return ''
+        normalized = normalize_telegram(value)
+        if not TELEGRAM_RE.match(normalized):
+            raise serializers.ValidationError(
+                'Telegram handle must be 5-32 chars, letters/digits/underscore only.'
+            )
+        return normalized
