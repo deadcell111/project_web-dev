@@ -9,4 +9,5 @@ export const routes: Routes = [
   { path: 'items/:id', loadComponent: () => import('./pages/item-detail/item-detail').then(m => m.ItemDetail) },
   { path: 'my-items', loadComponent: () => import('./pages/my-items/my-items').then(m => m.MyItems), canActivate: [authGuard] },
   { path: 'post', loadComponent: () => import('./pages/post-item/post-item').then(m => m.PostItem), canActivate: [authGuard] },
+  { path: 'profile', loadComponent: () => import('./pages/profile/profile').then(m => m.Profile), canActivate: [authGuard] },
 ];
