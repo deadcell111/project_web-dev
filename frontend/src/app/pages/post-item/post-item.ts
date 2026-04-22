@@ -4,10 +4,11 @@ import { Router } from '@angular/router';
 import { ItemService } from '../../services/item.service';
 import { CategoryService } from '../../services/category.service';
 import { Category } from '../../interfaces/category.interface';
+import { ImageUpload } from '../../components/image-upload/image-upload';
 
 @Component({
   selector: 'app-post-item',
-  imports: [FormsModule],
+  imports: [FormsModule, ImageUpload],
   template: `
     <div class="max-w-lg mx-auto">
       <h1 class="text-2xl font-bold text-gray-900 mb-6">Report Lost or Found Item</h1>
@@ -64,11 +65,10 @@ import { Category } from '../../interfaces/category.interface';
               class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
           </div>
 
-          <!-- Image URL -->
+          <!-- Photo -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Image URL (optional)</label>
-            <input [(ngModel)]="imageUrl" type="text" placeholder="https://..."
-              class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+            <label class="block text-sm font-medium text-gray-700 mb-1">Photo</label>
+            <app-image-upload kind="item" (uploaded)="imageKey = $event"></app-image-upload>
           </div>
 
           <button (click)="onSubmit()" [disabled]="loading || !isValid()"
@@ -91,7 +91,7 @@ export class PostItem implements OnInit {
   description = '';
   categoryId: number | null = null;
   location = '';
-  imageUrl = '';
+  imageKey = '';
   error = '';
   loading = false;
 
@@ -113,10 +113,8 @@ export class PostItem implements OnInit {
       item_type: this.itemType,
       category: this.categoryId,
       location: this.location,
+      image: this.imageKey || null,
     };
-    if (this.imageUrl.trim()) {
-      body.image = this.imageUrl;
-    }
 
     this.itemService.createItem(body).subscribe({
       next: (item) => {
