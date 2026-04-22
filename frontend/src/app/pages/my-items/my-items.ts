@@ -25,9 +25,9 @@ import { Item } from '../../interfaces/item.interface';
     } @else {
       <div class="space-y-4">
         @for (item of items; track item.id) {
-          <a [routerLink]="['/items', item.id]" class="bg-white rounded-lg border border-gray-200 p-4 block hover:shadow-md transition-shadow">
+          <div class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
             <div class="flex items-start justify-between">
-              <div class="flex-1">
+              <a [routerLink]="['/items', item.id]" class="flex-1 block">
                 <div class="flex items-center gap-2 mb-1">
                   <span [class]="item.item_type === 'LOST' ? 'px-2 py-0.5 text-xs font-medium rounded-full bg-red-100 text-red-700' : 'px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-700'">
                     {{ item.item_type }}
@@ -39,14 +39,23 @@ import { Item } from '../../interfaces/item.interface';
                 </div>
                 <h3 class="font-semibold text-gray-900">{{ item.title }}</h3>
                 <p class="text-sm text-gray-600 mt-1">{{ item.location }} &middot; {{ item.created_at | date:'mediumDate' }}</p>
-              </div>
+              </a>
               @if (item.claims && item.claims.length > 0) {
                 <div class="ml-4 px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
                   {{ item.claims.length }} claim{{ item.claims.length > 1 ? 's' : '' }}
                 </div>
               }
             </div>
-          </a>
+            <div class="flex items-center gap-3 mt-2">
+              <a [routerLink]="['/items', item.id, 'edit']" class="text-sm text-gray-600 hover:underline">Edit</a>
+              <button (click)="delete(item)" class="text-sm text-red-600 hover:underline">Delete</button>
+              @if (item.pending_claims_count > 0) {
+                <span class="text-xs px-2 py-0.5 rounded-full bg-yellow-50 border border-yellow-200 text-yellow-800">
+                  {{ item.pending_claims_count }} pending
+                </span>
+              }
+            </div>
+          </div>
         }
       </div>
     }
@@ -66,6 +75,13 @@ export class MyItems implements OnInit {
         this.loading = false;
       },
       error: () => this.loading = false,
+    });
+  }
+
+  delete(item: Item) {
+    if (!confirm(`Delete "${item.title}"?`)) return;
+    this.itemService.deleteItem(item.id).subscribe(() => {
+      this.items = this.items.filter(i => i.id !== item.id);
     });
   }
 }
