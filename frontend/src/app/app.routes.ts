@@ -11,4 +11,5 @@ export const routes: Routes = [
   { path: 'post', loadComponent: () => import('./pages/post-item/post-item').then(m => m.PostItem), canActivate: [authGuard] },
   { path: 'profile', loadComponent: () => import('./pages/profile/profile').then(m => m.Profile), canActivate: [authGuard] },
   { path: 'my-claims', loadComponent: () => import('./pages/my-claims/my-claims').then(m => m.MyClaims), canActivate: [authGuard] },
+  { path: 'items/:id/edit', loadComponent: () => import('./pages/item-edit/item-edit').then(m => m.ItemEdit), canActivate: [authGuard] },
 ];

@@ -8,11 +8,14 @@ export interface Item {
   title: string;
   description: string;
   item_type: 'LOST' | 'FOUND';
-  status: 'OPEN' | 'CLAIMED' | 'RESOLVED';
+  status: 'OPEN' | 'RESOLVED';
   category: number;
   category_detail: Category;
   location: string;
   image: string | null;
+  image_key: string | null;
+  owner_telegram: string | null;
+  pending_claims_count: number;
   created_at: string;
   updated_at: string;
   claims: Claim[];
