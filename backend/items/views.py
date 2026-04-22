@@ -247,3 +247,36 @@ def stats_view(request):
         'resolved_items': resolved,
         'lost_active': lost_active,
     })
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def withdraw_claim_view(request, pk):
+    try:
+        claim = Claim.objects.select_related('item').get(pk=pk)
+    except Claim.DoesNotExist:
+        return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    if claim.user != request.user:
+        return Response(
+            {'detail': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN
+        )
+    if claim.status != Claim.Status.PENDING:
+        return Response(
+            {'detail': 'Only pending claims can be withdrawn.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    item_owner = claim.item.user
+    item = claim.item
+    claim.delete()
+
+    notify(
+        recipient=item_owner,
+        actor=request.user,
+        kind=Notification.Kind.CLAIM_WITHDRAWN,
+        item=item,
+        claim=None,
+    )
+
+    return Response(status=status.HTTP_204_NO_CONTENT)

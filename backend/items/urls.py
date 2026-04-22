@@ -9,6 +9,7 @@ from items.views import (
     create_claim_view,
     item_detail_view,
     stats_view,
+    withdraw_claim_view,
 )
 
 urlpatterns = [
@@ -17,6 +18,7 @@ urlpatterns = [
     path('items/<int:pk>/', item_detail_view, name='item-detail'),
     path('items/<int:pk>/claims/', create_claim_view, name='create-claim'),
     path('items/<int:pk>/claims/list/', ClaimListView.as_view(), name='claim-list'),
+    path('claims/<int:pk>/withdraw/', withdraw_claim_view, name='claim-withdraw'),
     path('claims/<int:pk>/<str:action>/', approve_reject_view, name='approve-reject'),
     path('categories/', CategoryListView.as_view(), name='category-list'),
     path('stats/', stats_view, name='stats'),
