@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Claim } from '../interfaces/claim.interface';
+import { Claim, MyClaim } from '../interfaces/claim.interface';
 
 const API = '/api';
 
@@ -23,5 +23,13 @@ export class ClaimService {
 
   rejectClaim(claimId: number): Observable<Claim> {
     return this.http.patch<Claim>(`${API}/claims/${claimId}/reject/`, {});
+  }
+
+  withdraw(claimId: number): Observable<void> {
+    return this.http.delete<void>(`/api/claims/${claimId}/withdraw/`);
+  }
+
+  myClaims(): Observable<MyClaim[]> {
+    return this.http.get<MyClaim[]>('/api/claims/my/');
   }
 }
