@@ -42,10 +42,10 @@ class ItemSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
     owner_telegram = serializers.SerializerMethodField()
     pending_claims_count = serializers.SerializerMethodField()
-    image_key = serializers.CharField(
-        source='image', read_only=True, allow_null=True,
+    image = serializers.CharField(
+        required=False, allow_null=True, allow_blank=True, max_length=500,
     )
-    image = serializers.SerializerMethodField()
+    image_key = serializers.CharField(read_only=True, allow_null=True)
 
     class Meta:
         model = Item
@@ -58,12 +58,16 @@ class ItemSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             'id', 'user', 'username', 'status',
-            'image_key', 'pending_claims_count', 'owner_telegram',
+            'pending_claims_count', 'owner_telegram',
             'created_at', 'updated_at',
         ]
 
-    def get_image(self, obj: Item):
-        return presign_get(obj.image)
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        raw = data.get('image')
+        data['image_key'] = raw
+        data['image'] = presign_get(raw)
+        return data
 
     def get_pending_claims_count(self, obj: Item):
         return sum(1 for c in obj.claims.all() if c.status == 'PENDING')
@@ -81,7 +85,3 @@ class ItemSerializer(serializers.ModelSerializer):
         if approved_claim is None:
             return None
         return getattr(obj.user.profile, 'telegram', '') or None
-
-    def to_internal_value(self, data):
-        # Accept image as object_key or null on write
-        return super().to_internal_value(data)
