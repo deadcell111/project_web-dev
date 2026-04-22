@@ -1,4 +1,4 @@
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.db.models import Count, Q
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -159,7 +159,7 @@ class ClaimListView(APIView):
 @permission_classes([IsAuthenticated])
 def approve_reject_view(request, pk, action):
     try:
-        claim = Claim.objects.select_related('item').get(pk=pk)
+        claim = Claim.objects.select_related('item', 'user').get(pk=pk)
     except Claim.DoesNotExist:
         return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -167,24 +167,62 @@ def approve_reject_view(request, pk, action):
         return Response(
             {'detail': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN
         )
+    if claim.status != Claim.Status.PENDING:
+        return Response(
+            {'detail': 'Claim is not pending.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     if action == 'approve':
-        claim.status = Claim.Status.APPROVED
-        claim.save(update_fields=['status'])
-        claim.item.status = Item.Status.RESOLVED
-        claim.item.save(update_fields=['status'])
+        with transaction.atomic():
+            claim.status = Claim.Status.APPROVED
+            claim.save(update_fields=['status'])
+            claim.item.status = Item.Status.RESOLVED
+            claim.item.save(update_fields=['status'])
+
+            # Auto-reject remaining pending claims on this item
+            other_pending = Claim.objects.filter(
+                item=claim.item, status=Claim.Status.PENDING
+            ).exclude(pk=claim.pk).select_related('user')
+            for other in other_pending:
+                other.status = Claim.Status.REJECTED
+                other.save(update_fields=['status'])
+                notify(
+                    recipient=other.user,
+                    actor=request.user,
+                    kind=Notification.Kind.CLAIM_REJECTED,
+                    item=claim.item,
+                    claim=other,
+                )
+
+        notify(
+            recipient=claim.user,
+            actor=request.user,
+            kind=Notification.Kind.CLAIM_APPROVED,
+            item=claim.item,
+            claim=claim,
+        )
+
     elif action == 'reject':
         claim.status = Claim.Status.REJECTED
         claim.save(update_fields=['status'])
-        remaining = Claim.objects.filter(
-            item=claim.item, status=Claim.Status.PENDING
-        ).exists()
-        if not remaining:
-            claim.item.status = Item.Status.OPEN
-            claim.item.save(update_fields=['status'])
+        # Item.status intentionally untouched
+        notify(
+            recipient=claim.user,
+            actor=request.user,
+            kind=Notification.Kind.CLAIM_REJECTED,
+            item=claim.item,
+            claim=claim,
+        )
 
-    serializer = ClaimSerializer(claim, context={'request': request})
-    return Response(serializer.data)
+    else:
+        return Response(
+            {'detail': 'Invalid action.'}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    return Response(
+        ClaimSerializer(claim, context={'request': request}).data
+    )
 
 
 class CategoryListView(APIView):
