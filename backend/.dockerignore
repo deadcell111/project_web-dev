@@ -1,0 +1,17 @@
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.mypy_cache
+.ruff_cache
+staticfiles
+media
+.env
+.env.*
+.git
+.gitignore
+.DS_Store
+Dockerfile
+.dockerignore
