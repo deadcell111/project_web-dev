@@ -16,4 +16,11 @@ export class CategoryService {
     }
     return this.cache$;
   }
+
+  refresh(): Observable<Category[]> {
+    this.cache$ = this.http.get<Category[]>('/api/categories/').pipe(
+      shareReplay(1)
+    );
+    return this.cache$;
+  }
 }
