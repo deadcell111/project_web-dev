@@ -67,7 +67,17 @@ def item_detail_view(request, pk):
         serializer = ItemSerializer(item, context={'request': request})
         return Response(serializer.data)
 
-    if not request.user.is_authenticated or item.user != request.user:
+    if not request.user.is_authenticated:
+        return Response(
+            {'detail': 'Authentication required.'}, status=status.HTTP_401_UNAUTHORIZED
+        )
+    is_owner = item.user == request.user
+    is_admin = request.user.is_staff
+    if request.method == 'PUT' and not is_owner:
+        return Response(
+            {'detail': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN
+        )
+    if request.method == 'DELETE' and not (is_owner or is_admin):
         return Response(
             {'detail': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN
         )
