@@ -43,9 +43,24 @@ import { Item } from '../../interfaces/item.interface';
 
           <!-- Owner actions -->
           @if (isOwner) {
-            <div class="flex gap-2 mb-6">
-              <button (click)="deleteItem()" class="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors cursor-pointer">
-                Delete Item
+            <div class="flex gap-2 mb-4">
+              <button (click)="startEdit()" class="px-3 py-1.5 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50">Edit</button>
+              <button (click)="remove()" class="px-3 py-1.5 text-sm bg-white border border-red-300 text-red-600 rounded-md hover:bg-red-50">Delete</button>
+            </div>
+          }
+
+          <!-- Claimant view: reveal owner telegram on approved claim -->
+          @if (!isOwner && item.owner_telegram) {
+            <a [href]="'https://t.me/' + item.owner_telegram" target="_blank" class="inline-block mt-2 mb-4 text-sm text-blue-600 hover:underline">
+              Contact owner on Telegram ▶
+            </a>
+          }
+
+          <!-- Withdraw pending claim -->
+          @if (myPendingClaim) {
+            <div class="mb-4">
+              <button (click)="withdraw()" class="text-sm text-red-600 hover:underline">
+                Withdraw my claim
               </button>
             </div>
           }
@@ -88,6 +103,11 @@ import { Item } from '../../interfaces/item.interface';
                       <button (click)="approveClaim(claim.id)" class="px-3 py-1 bg-green-600 text-white text-xs rounded-md hover:bg-green-700 cursor-pointer">Approve</button>
                       <button (click)="rejectClaim(claim.id)" class="px-3 py-1 bg-red-600 text-white text-xs rounded-md hover:bg-red-700 cursor-pointer">Reject</button>
                     </div>
+                  }
+                  @if (claim.status === 'APPROVED' && claim.user_telegram) {
+                    <a [href]="'https://t.me/' + claim.user_telegram" target="_blank" class="text-sm text-blue-600 hover:underline">
+                      Contact on Telegram ▶
+                    </a>
                   }
                 </div>
               }
@@ -151,6 +171,31 @@ export class ItemDetail implements OnInit {
     this.itemService.deleteItem(this.item.id).subscribe(() => {
       this.router.navigate(['/my-items']);
     });
+  }
+
+  get myPendingClaim() {
+    const me = this.auth.currentUser;
+    if (!me || !this.item) return null;
+    return this.item.claims?.find(c => c.user === me.id && c.status === 'PENDING') ?? null;
+  }
+
+  remove() {
+    if (!confirm('Delete this item?')) return;
+    this.itemService.deleteItem(this.item!.id).subscribe(() => this.router.navigate(['/my-items']));
+  }
+
+  startEdit() {
+    this.router.navigate(['/items', this.item!.id, 'edit']);
+  }
+
+  withdraw() {
+    const c = this.myPendingClaim;
+    if (!c) return;
+    this.claimService.withdraw(c.id).subscribe(() => this.loadItem());
+  }
+
+  private loadItem() {
+    this.reloadItem();
   }
 
   private reloadItem() {
