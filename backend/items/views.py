@@ -40,11 +40,11 @@ class ItemListCreateView(APIView):
         paginator = PageNumberPagination()
         paginator.page_size = 20
         page = paginator.paginate_queryset(queryset, request)
-        serializer = ItemSerializer(page, many=True)
+        serializer = ItemSerializer(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
 
     def post(self, request):
-        serializer = ItemSerializer(data=request.data)
+        serializer = ItemSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save(user=request.user)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -60,7 +60,7 @@ def item_detail_view(request, pk):
         return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'GET':
-        serializer = ItemSerializer(item)
+        serializer = ItemSerializer(item, context={'request': request})
         return Response(serializer.data)
 
     if not request.user.is_authenticated or item.user != request.user:
@@ -69,7 +69,7 @@ def item_detail_view(request, pk):
         )
 
     if request.method == 'PUT':
-        serializer = ItemSerializer(item, data=request.data)
+        serializer = ItemSerializer(item, data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
@@ -86,7 +86,7 @@ class MyItemsView(APIView):
         items = Item.objects.filter(user=request.user).select_related(
             'category'
         ).prefetch_related('claims__user')
-        serializer = ItemSerializer(items, many=True)
+        serializer = ItemSerializer(items, many=True, context={'request': request})
         return Response(serializer.data)
 
 
@@ -104,7 +104,7 @@ def create_claim_view(request, pk):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    serializer = ClaimSerializer(data=request.data)
+    serializer = ClaimSerializer(data=request.data, context={'request': request})
     serializer.is_valid(raise_exception=True)
     serializer.save(item=item, user=request.user)
 
@@ -130,7 +130,7 @@ class ClaimListView(APIView):
             )
 
         claims = Claim.objects.filter(item=item).select_related('user')
-        serializer = ClaimSerializer(claims, many=True)
+        serializer = ClaimSerializer(claims, many=True, context={'request': request})
         return Response(serializer.data)
 
 
@@ -162,7 +162,7 @@ def approve_reject_view(request, pk, action):
             claim.item.status = Item.Status.OPEN
             claim.item.save(update_fields=['status'])
 
-    serializer = ClaimSerializer(claim)
+    serializer = ClaimSerializer(claim, context={'request': request})
     return Response(serializer.data)
 
 
