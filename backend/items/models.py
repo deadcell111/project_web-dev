@@ -28,7 +28,6 @@ class Item(models.Model):
 
     class Status(models.TextChoices):
         OPEN = 'OPEN', 'Open'
-        CLAIMED = 'CLAIMED', 'Claimed'
         RESOLVED = 'RESOLVED', 'Resolved'
 
     user = models.ForeignKey(
