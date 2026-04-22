@@ -73,6 +73,13 @@ class Claim(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'item'],
+                condition=models.Q(status='PENDING'),
+                name='unique_pending_claim_per_user_item',
+            ),
+        ]
 
     def __str__(self):
         return f"Claim on {self.item.title} by {self.user.username}"
