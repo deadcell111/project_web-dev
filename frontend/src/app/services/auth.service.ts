@@ -12,6 +12,7 @@ export class AuthService {
 
   currentUser$ = this.userSubject.asObservable();
   isLoggedIn$ = this.currentUser$.pipe(map(u => !!u));
+  isAdmin$ = this.currentUser$.pipe(map(u => !!u?.is_staff));
 
   loadUser() {
     this.http.get<User>(`${API}/me/`).pipe(
