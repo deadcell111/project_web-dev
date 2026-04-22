@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from common.storage import presign_get
 from items.models import Category, Claim, Item
 
 
@@ -11,23 +12,76 @@ class CategorySerializer(serializers.ModelSerializer):
 
 class ClaimSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
+    user_telegram = serializers.SerializerMethodField()
 
     class Meta:
         model = Claim
-        fields = ['id', 'item', 'user', 'username', 'message', 'status', 'created_at']
-        read_only_fields = ['id', 'item', 'user', 'username', 'status', 'created_at']
+        fields = [
+            'id', 'item', 'user', 'username', 'message', 'status',
+            'user_telegram', 'created_at',
+        ]
+        read_only_fields = [
+            'id', 'item', 'user', 'username', 'status',
+            'user_telegram', 'created_at',
+        ]
+
+    def get_user_telegram(self, obj: Claim):
+        request = self.context.get('request')
+        if request is None or not request.user.is_authenticated:
+            return None
+        if obj.status != 'APPROVED':
+            return None
+        if request.user != obj.item.user and request.user != obj.user:
+            return None
+        return getattr(obj.user.profile, 'telegram', '') or None
 
 
 class ItemSerializer(serializers.ModelSerializer):
     category_detail = CategorySerializer(source='category', read_only=True)
     claims = ClaimSerializer(many=True, read_only=True)
     username = serializers.CharField(source='user.username', read_only=True)
+    owner_telegram = serializers.SerializerMethodField()
+    pending_claims_count = serializers.SerializerMethodField()
+    image_key = serializers.CharField(
+        source='image', read_only=True, allow_null=True,
+    )
+    image = serializers.SerializerMethodField()
 
     class Meta:
         model = Item
         fields = [
             'id', 'user', 'username', 'title', 'description',
             'item_type', 'status', 'category', 'category_detail',
-            'location', 'image', 'created_at', 'updated_at', 'claims',
+            'location', 'image', 'image_key',
+            'owner_telegram', 'pending_claims_count',
+            'created_at', 'updated_at', 'claims',
         ]
-        read_only_fields = ['id', 'user', 'username', 'status', 'created_at', 'updated_at']
+        read_only_fields = [
+            'id', 'user', 'username', 'status',
+            'image_key', 'pending_claims_count', 'owner_telegram',
+            'created_at', 'updated_at',
+        ]
+
+    def get_image(self, obj: Item):
+        return presign_get(obj.image)
+
+    def get_pending_claims_count(self, obj: Item):
+        return sum(1 for c in obj.claims.all() if c.status == 'PENDING')
+
+    def get_owner_telegram(self, obj: Item):
+        request = self.context.get('request')
+        if request is None or not request.user.is_authenticated:
+            return None
+        # Reveal owner telegram to users whose claim on this item is APPROVED
+        approved_claim = next(
+            (c for c in obj.claims.all()
+             if c.user_id == request.user.id and c.status == 'APPROVED'),
+            None,
+        )
+        if approved_claim is None:
+            return None
+        return getattr(obj.user.profile, 'telegram', '') or None
+
+    def to_internal_value(self, data):
+        # Accept image as object_key or null on write
+        return super().to_internal_value(data)
